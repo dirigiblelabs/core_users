@@ -1,1 +1,22 @@
-{"guid":"core_users","repository":{"type":"git","branch":"master","url":"https://github.com/dirigiblelabs/core_users.git"}}
+{
+    "guid":"core_users",
+    "repository":{
+        "type":"git",
+        "branch":"master",
+        "url":"https://github.com/dirigiblelabs/core_users.git"
+        
+    },
+    "dependencies": [
+        {
+            "guid":"arestme",
+            "type": "git",
+            "url": "https://github.com/dirigiblelabs/arestme.git",
+            "branch":"master"
+    	}, {
+    	    "guid":"docs_explorer",
+	        "type":"git",
+	        "url":"https://github.com/dirigiblelabs/docs_explorer.git",
+	        "branch":"master"
+    	}
+	]
+}
