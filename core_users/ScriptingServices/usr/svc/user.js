@@ -26,7 +26,7 @@ User.prototype.cfg[""].get = {
 		} catch(e) {
     	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
     	    self.logger.error(errorCode, e.message, e.errContext);
-        	self.sendError(io, errorCode, errorCode, e.message, e.errContext);
+        	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
         	throw e;
 		}
 	}
@@ -44,9 +44,11 @@ User.prototype.cfg["$current"] = {
 		    	var userLib = require('net/http/user');
 		    	
 		    	var userName = userLib.getName();
-		    	if(userName === undefined || userName === null)
-		    		throw new Error("No user principal in this request. Forgot to protect the application with SecurityConstraints specification or trying to access this endpoint annonynmously?");
-
+		    	if(userName === undefined || userName === null){
+		    		self.logger.error(undefined, "Getting currently logged in user yielded no user principal in the request. Either this is annonymous request or the resource is not protected.");
+		    		self.sendError(io, 404, 404, "Not Found");
+		    		return;
+				}
 		    	var documentPath = unescapePath(userLib.getName());
 		    	try{ 							
 					var documentLib = require('docs_explorer/lib/document_lib');
@@ -67,8 +69,8 @@ User.prototype.cfg["$current"] = {
 		    	io.response.println(jsonResponse);
 			} catch(e) {
 	    	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
-	    	    self.logger.error(errorCode, e.message, e.errContext);
-	        	self.sendError(io, errorCode, errorCode, e.message, e.errContext);
+	    	    self.logger.error(errorCode, e && e.message, e && e.errContext);
+	        	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
 	        	throw e;
 			}			
 		}
@@ -93,7 +95,7 @@ User.prototype.cfg["$pics/{userid}"] = {
 			} catch(e) {
 	    	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
 	    	    self.logger.error(errorCode, e.message, e.errContext);
-	        	self.sendError(io, errorCode, errorCode, e.message, e.errContext);
+	        	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
 	        	throw e;
 			}					
 		}
@@ -127,7 +129,7 @@ User.prototype.cfg["$pics/{userid}"] = {
 			} catch(e) {
 	    	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
 	    	    self.logger.error(errorCode, e.message, e.errContext);
-	        	self.sendError(io, errorCode, errorCode, e.message, e.errContext);
+	        	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
 	        	throw e;
 			}			
 		}
