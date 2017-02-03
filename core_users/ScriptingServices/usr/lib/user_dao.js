@@ -30,22 +30,19 @@ var UserDAO = function(orm){
 	DAO.call(this, orm, 'User DAO');
 };
 UserDAO.prototype = Object.create(DAO.prototype);
-
-var database = require("db/database");
-var datasource = database.getDatasource();
-var $log = require("log/loggers").get('User DAO');
+UserDAO.prototype.constructor = UserDAO;
 
 // Read all entities, parse and return them as an array of JSON objets
 UserDAO.prototype.listByUName = function(limit, offset, sort, order, expanded, username) {
 
-	$log.info('Listing USR_USER entity collection expanded['+expanded+'] with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], order['+order+'], entityName['+username+']');
+	this.$log.info('Listing USR_USER entity collection expanded['+expanded+'] with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], order['+order+'], entityName['+username+']');
 	
-    var connection = datasource.getConnection();
+    var connection = this.datasource.getConnection();
     try {
         var entities = [];
         var sql = "SELECT";
         if (limit !== null && offset !== null) {
-            sql += " " + datasource.getPaging().genTopAndStart(limit, offset);
+            sql += " " + this.datasource.getPaging().genTopAndStart(limit, offset);
         }
         
         sql += " * FROM USR_USER";
@@ -59,7 +56,7 @@ UserDAO.prototype.listByUName = function(limit, offset, sort, order, expanded, u
             sql += " " + order;
         }
         if ((limit !== undefined && limit !== null) && (offset !== undefined && offset !== null)) {
-            sql += " " + datasource.getPaging().genLimitAndOffset(limit, offset);
+            sql += " " + this.datasource.getPaging().genLimitAndOffset(limit, offset);
         }
 
         var statement = connection.prepareStatement(sql);
@@ -69,7 +66,7 @@ UserDAO.prototype.listByUName = function(limit, offset, sort, order, expanded, u
             entities.push(entity);
         }
         
-        $log.info('' + entities.length +' USR_USER entities found');
+        this.$log.info('' + entities.length +' USR_USER entities found');
         
         return entities;
     } finally {

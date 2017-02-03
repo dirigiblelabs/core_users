@@ -2,83 +2,80 @@
 /* eslint-env node, dirigible */
 
 "use strict";
+var DataService = require('arestme/data_service').DataService;
+var UserDataService = function(dao){
+	DataService.call(this, dao, 'User Svc');
+};
+UserDataService.prototype = Object.create(DataService.prototype);
+UserDataService.prototype.constructor = UserDataService;
+
 var userDAO = require("usr/lib/user_dao").get();
-var daoService = require('arestme/data_service').asService(userDAO, {} ,'User Svc');
+var userDataService = new UserDataService(userDAO);
 
 function unescapePath(path){
 	return path.replace(/\\/g, '');
 }
 
-daoService.addResourceHandlers({
-	"": {
-		"get": {
-			"handler": function(context, io){
-				var offset = context.queryParams.offset || 0;
-				var limit = context.queryParams.limit || 100;
-				var sort = context.queryParams.sort;
-				var order = context.queryParams.order;			
-				var expanded = context.queryParams.expanded;
-				var username = context.queryParams.username;
-		
-			    try{
-					var entities = daoService.dao.listByUName(limit, offset, sort, order, expanded, username);
-			        var jsonResponse = JSON.stringify(entities, null, 2);
-			    	io.response.println(jsonResponse);
-				} catch(e) {
-		    	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
-		    	    daoService.logger.error(e.message, e);
-		        	daoService.sendError(errorCode, errorCode, e.message);
-		        	throw e;
-				}
-			}
-		}
+userDataService.getResourceHandlersMap()[""]["get"].handler = function(context, io){
+	var offset = context.queryParams.offset || 0;
+	var limit = context.queryParams.limit || 100;
+	var sort = context.queryParams.sort;
+	var order = context.queryParams.order;			
+	var expanded = context.queryParams.expanded;
+	var username = context.queryParams.username;
+
+    try{
+		var entities = this.handlersProvider.dao.listByUName(limit, offset, sort, order, expanded, username);
+        var jsonResponse = JSON.stringify(entities, null, 2);
+    	io.response.println(jsonResponse);
+	} catch(e) {
+	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
+	    userDataService.logger.error(e.message, e);
+    	userDataService.sendError(errorCode, errorCode, e.message);
+    	throw e;
 	}
-}).addResourceHandlers({
-	"$current": {
-		get: {
-			handler: function(context, io){
-				var self = daoService;
-			    try{
-			    	var userLib = require('net/http/user');
-			    	
-			    	var userName = userLib.getName();
-			    	if(userName === undefined || userName === null){
-			    		self.logger.error("Getting currently logged in user yielded no user principal in the request. Either this is annonymous request or the resource is not protected.");
-			    		self.sendError(io, 404, 404, "Not Found");
-			    		return;
-					}
-			    	var documentPath = unescapePath(userLib.getName());
-			    	try{ 							
-						var documentLib = require('docs_explorer/lib/document_lib');
-						var document = documentLib.getDocument(documentPath);
-						if(!document.getName())
-							documentPath = undefined;
-					} catch(docerr){
-						documentPath = undefined;						
-					}
-					var avatarurl = documentPath?'/services/js/usr/svc/user.js/$pics/'+ documentPath:undefined;
-	
-			    	var currentUser = {
-			    		uname: userLib.getName(),
-			    		avatarUrl: avatarurl
-			    	};
-	
-			        var jsonResponse = JSON.stringify(currentUser, null, 2);
-			    	io.response.println(jsonResponse);
-				} catch(e) {
-		    	    var errorCode = io.response.INTERNAL_SERVER_ERROR;
-		    	    self.logger.error(e.message, e);
-		        	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
-		        	throw e;
-				}			
-			}
+};
+
+userDataService.addResourceHandler('$current', 'get', function(context, io){
+	var self = userDataService;
+    try{
+    	var userLib = require('net/http/user');
+    	
+    	var userName = userLib.getName();
+    	if(userName === undefined || userName === null){
+    		self.logger.error("Getting currently logged in user yielded no user principal in the request. Either this is annonymous request or the resource is not protected.");
+    		self.sendError(io, 404, 404, "Not Found");
+    		return;
 		}
-	}
+    	var documentPath = unescapePath(userLib.getName());
+    	try{ 							
+			var documentLib = require('docs_explorer/lib/document_lib');
+			var document = documentLib.getDocument(documentPath);
+			if(!document.getName())
+				documentPath = undefined;
+		} catch(docerr){
+			documentPath = undefined;						
+		}
+		var avatarurl = documentPath?'/services/js/usr/svc/user.js/$pics/'+ documentPath:undefined;
+
+    	var currentUser = {
+    		uname: userLib.getName(),
+    		avatarUrl: avatarurl
+    	};
+
+        var jsonResponse = JSON.stringify(currentUser, null, 2);
+    	io.response.println(jsonResponse);
+	} catch(e) {
+	    var errorCode = io.response.INTERNAL_SERVER_ERROR;
+	    self.logger.error(e.message, e);
+    	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
+    	throw e;
+	}			
 }).addResourceHandlers({
 	"$pics/{userid}": {		
-		get: {
+		"get": {
 			handler: function(context, io){
-				var self = daoService;
+				var self = userDataService;
 				try{
 					var userid = context.pathParams.userid;
 					var documentPath = '/'+userid;
@@ -98,9 +95,9 @@ daoService.addResourceHandlers({
 				}					
 			}
 		},
-		post: {
+		"post": {
 			handler: function(context, io){
-				var self = daoService;
+				var self = userDataService;
 				var userid = context.pathParams.userid;
 				var userLib = require('net/http/user');
 				if(!userLib.isInRole('owner') && userLib.getName() !== userid){
@@ -135,4 +132,4 @@ daoService.addResourceHandlers({
 	}
 });
 
-daoService.service();
+userDataService.service();
