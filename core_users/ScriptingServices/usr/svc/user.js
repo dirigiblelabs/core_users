@@ -2,41 +2,22 @@
 /* eslint-env node, dirigible */
 
 "use strict";
-var DataService = require('arestme/data_service').DataService;
-var UserDataService = function(dao){
-	DataService.call(this, dao, 'User Svc');
-};
-UserDataService.prototype = Object.create(DataService.prototype);
-UserDataService.prototype.constructor = UserDataService;
-
-var userDAO = require("usr/lib/user_dao").get();
-var userDataService = new UserDataService(userDAO);
 
 function unescapePath(path){
 	return path.replace(/\\/g, '');
 }
 
-userDataService.getResourceHandlersMap()[""]["get"].handler = function(context, io){
-	var offset = context.queryParams.offset || 0;
-	var limit = context.queryParams.limit || 100;
-	var sort = context.queryParams.sort;
-	var order = context.queryParams.order;			
-	var expanded = context.queryParams.expanded;
-	var username = context.queryParams.username;
-
-    try{
-		var entities = this.handlersProvider.dao.listByUName(limit, offset, sort, order, expanded, username);
-        var jsonResponse = JSON.stringify(entities, null, 2);
-    	io.response.println(jsonResponse);
-	} catch(e) {
-	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
-	    userDataService.logger.error(e.message, e);
-    	userDataService.sendError(errorCode, errorCode, e.message);
-    	throw e;
-	}
+var HttpController = require('arestme/http').HttpController;
+var UserService = function(){
+	HttpController.call(this);
+	this.logger = require('log/loggers').get('usr/UserService');
 };
 
-userDataService.addResourceHandler('$current', 'get', function(context, io){
+UserService.prototype = Object.create(HttpController.prototype);
+UserService.prototype.constructor = UserService;
+
+var userDataService = new UserService()
+.addResourceHandler('$current', 'get', function(context, io){
 	var self = userDataService;
     try{
     	var userLib = require('net/http/user');
@@ -71,7 +52,8 @@ userDataService.addResourceHandler('$current', 'get', function(context, io){
     	self.sendError(errorCode, errorCode, e.message);
     	throw e;
 	}			
-}).addResourceHandlers({
+})
+.addResourceHandlers({
 	"$pics/{userid}": {		
 		"get": {
 			handler: function(context, io){
