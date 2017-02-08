@@ -16,7 +16,8 @@ var orm = {
 			name: "uname",
 			dbName: "USRU_UNAME",
 			required: true,
-			type: "String"
+			type: "String",
+			size: 255
 		},{
 			name: "pic",
 			dbName: "USRU_PIC",

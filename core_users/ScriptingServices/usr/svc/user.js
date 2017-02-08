@@ -68,7 +68,7 @@ userDataService.addResourceHandler('$current', 'get', function(context, io){
 	} catch(e) {
 	    var errorCode = io.response.INTERNAL_SERVER_ERROR;
 	    self.logger.error(e.message, e);
-    	self.sendError(io, errorCode, errorCode, e && e.message, e && e.errContext);
+    	self.sendError(errorCode, errorCode, e.message);
     	throw e;
 	}			
 }).addResourceHandlers({
@@ -83,16 +83,23 @@ userDataService.addResourceHandler('$current', 'get', function(context, io){
 						documentPath = unescapePath(documentPath);
 					var documentLib = require('docs_explorer/lib/document_lib');
 					var document = documentLib.getDocument(documentPath);
-					var contentStream = documentLib.getDocumentStream(document);
+					var contentStream;
+					try {
+						contentStream = documentLib.getDocumentStream(document);
+					} catch(ioe) {
+						self.logger.info('Requested resource not found: ' + documentPath);
+						self.sendError(io.response.NOT_FOUND, io.response.NOT_FOUND, "Not found");
+						return;
+					}
 					var contentType = contentStream.getInternalObject().getMimeType();
 					io.response.setContentType(contentType);
 					io.response.writeStream(contentStream.getStream());
 				} catch(e) {
 		    	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
 		    	    self.logger.error(e.message, e);
-		        	self.sendError(errorCode, errorCode, e && e.message, e && e.errContext);
+		        	self.sendError(errorCode, errorCode, e.message);
 		        	throw e;
-				}					
+				}	
 			}
 		},
 		"post": {
@@ -101,8 +108,8 @@ userDataService.addResourceHandler('$current', 'get', function(context, io){
 				var userid = context.pathParams.userid;
 				var userLib = require('net/http/user');
 				if(!userLib.isInRole('owner') && userLib.getName() !== userid){
-					self.logger.error('403: Unauthorized for access');
-		        	self.sendError(io, 403, 403, "Unauthorized");
+					self.logger.error('Unauthorized for access: user['+userLib.getName()+']');
+		        	self.sendError(403, 403, "Unauthorized");
 		        	return;
 				}
 				var documentLib = require('docs_explorer/lib/document_lib');
@@ -124,7 +131,7 @@ userDataService.addResourceHandler('$current', 'get', function(context, io){
 				} catch(e) {
 		    	    var errorCode = io.response.INTERNAL_SERVER_ERROR ;
 		    	    self.logger.error(e.message, e);
-		        	self.sendError(errorCode, errorCode, e && e.message, e && e.errContext);
+		        	self.sendError(errorCode, errorCode, e.message);
 		        	throw e;
 				}			
 			}
